@@ -173,6 +173,33 @@ const getSalesSummary = {
     })
 };
 
+const processPayment = {
+    body: Joi.object({
+        sale_id: Joi.string().uuid().required(),
+        gateway: Joi.string().valid('stripe', 'mercadopago', 'pagseguro').default('stripe'),
+        payment_method: Joi.string().valid('CREDIT_CARD', 'PIX', 'BANK_TRANSFER', 'BOLETO').required()
+    })
+};
+
+const refundPayment = {
+    body: Joi.object({
+        sale_id: Joi.string().uuid().required(),
+        gateway: Joi.string().valid('stripe', 'mercadopago', 'pagseguro').default('stripe'),
+        amount: Joi.number().integer().min(1).optional()
+    })
+};
+
+const getPaymentStatus = {
+    query: Joi.object({
+        sale_id: Joi.string().uuid().required(),
+        gateway: Joi.string().valid('stripe', 'mercadopago', 'pagseguro').default('stripe')
+    })
+};
+
+const getIntegrationsHealth = {
+    // Sem validação específica, apenas verificação de saúde
+};
+
 module.exports = {
     list,
     getById,
@@ -183,5 +210,9 @@ module.exports = {
     updatePaymentStatus,
     softDelete,
     getSalesByCustomer,
-    getSalesSummary
+    getSalesSummary,
+    processPayment,
+    refundPayment,
+    getPaymentStatus,
+    getIntegrationsHealth
 };

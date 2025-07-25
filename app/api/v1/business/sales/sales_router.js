@@ -44,6 +44,29 @@ router.patch(
     salesController.updatePaymentStatus
 );
 
+// Rotas de processamento de pagamento
+router.post(
+    '/payment/process',
+    ensureAuthorization,
+    verifyToken,
+    validator(validation.processPayment),
+    salesController.processPayment
+);
+router.post(
+    '/payment/refund',
+    ensureAuthorization,
+    verifyToken,
+    validator(validation.refundPayment),
+    salesController.refundPayment
+);
+router.get(
+    '/payment/status',
+    ensureAuthorization,
+    verifyToken,
+    validator(validation.getPaymentStatus),
+    salesController.getPaymentStatus
+);
+
 // Rotas de consulta por cliente
 router.get(
     '/customer/:customerId',
@@ -52,5 +75,8 @@ router.get(
     validator(validation.getSalesByCustomer),
     salesController.getSalesByCustomer
 );
+
+// Rota de health check das integrações
+router.get('/integrations/health', ensureAuthorization, verifyToken, salesController.getIntegrationsHealth);
 
 module.exports = router;

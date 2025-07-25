@@ -1,19 +1,22 @@
-FROM node:20-alpine
+FROM node:18-alpine
 
-RUN mkdir -p /usr/app/current
+WORKDIR /app
 
-WORKDIR /usr/app/current
+# Copy package files
+COPY package*.json ./
 
-COPY package.json package-lock.json ./
+# Install dependencies (production only)
+RUN npm ci --only=production
 
-RUN npm i -g cross-env nodemon jest@^27.5.1 pino-pretty --silent
-RUN npm ci --silent
-
+# Copy source code
 COPY . .
 
-EXPOSE 8080
+# Expose port
+EXPOSE 3002
 
-ENV NODE_ENV production
+# Set environment variables
+ENV NODE_ENV=production
 ENV TZ="America/Sao_Paulo"
 
-CMD [ "nodemon", "server.js" ]
+# Start the application
+CMD ["node", "server.js"]

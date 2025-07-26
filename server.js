@@ -3,8 +3,8 @@ const database = require('./config/database');
 const logger = require('./app/utils/logger');
 
 const server = app
-    .listen(process.env.PORT_SERVER, () => {
-        logger.info(`App running at port ${process.env.PORT_SERVER} on ${process.env.NODE_ENV}.`);
+    .listen(process.env.PORT, () => {
+        logger.info(`App running at port ${process.env.PORT} on ${process.env.NODE_ENV}.`);
     })
     .on('error', function (err) {
         logger.debug(err);

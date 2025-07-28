@@ -1,7 +1,7 @@
-const BaseIntegration = require('../base/base_integration');
-const logger = require('../../../utils/logger');
+const BaseIntegration = require('../api/v1/base/base_integration');
+const logger = require('../utils/logger');
 
-class SalesPaymentIntegration extends BaseIntegration {
+class SalesPayment extends BaseIntegration {
     constructor(gateway = 'stripe') {
         super('payment', gateway);
         this.paymentGateways = ['stripe', 'mercadopago', 'pagseguro'];
@@ -20,7 +20,7 @@ class SalesPaymentIntegration extends BaseIntegration {
             logger.info(`Processing payment for sale ${saleData.order_number} via ${targetGateway}`);
 
             // Criar uma nova instância com o gateway específico
-            const paymentIntegration = new SalesPaymentIntegration(targetGateway);
+            const paymentIntegration = new SalesPayment(targetGateway);
 
             // Simular processamento de pagamento
             const response = await paymentIntegration.httpClient.post('/payments', paymentData);
@@ -237,4 +237,4 @@ class SalesPaymentIntegration extends BaseIntegration {
     }
 }
 
-module.exports = SalesPaymentIntegration;
+module.exports = SalesPayment;

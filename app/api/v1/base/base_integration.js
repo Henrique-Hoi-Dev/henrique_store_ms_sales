@@ -1,9 +1,7 @@
 const axios = require('axios');
 const logger = require('../../../utils/logger');
 
-// Configuração centralizada dos serviços externos
 const EXTERNAL_SERVICES = {
-    // Payment Gateways
     payment: {
         stripe: {
             baseURL: process.env.STRIPE_API_URL || 'https://api.stripe.com/v1',
@@ -86,13 +84,12 @@ class BaseIntegration {
         this.externalServices = EXTERNAL_SERVICES;
         this.logger = logger;
 
-        // Configurar cliente HTTP baseado no serviço e gateway
         const serviceConfig = this.getServiceConfig();
 
         this.httpClient = axios.create({
             baseURL: serviceConfig.baseURL,
             headers: serviceConfig.headers,
-            timeout: 30000 // 30 segundos timeout
+            timeout: 30000
         });
 
         this.setupInterceptors();
@@ -105,17 +102,14 @@ class BaseIntegration {
             throw new Error(`Service ${this.serviceName} not configured`);
         }
 
-        // Se há um gateway específico, retorna a configuração do gateway
         if (this.gateway && service[this.gateway]) {
             return service[this.gateway];
         }
 
-        // Caso contrário, retorna a configuração padrão do serviço
         return service;
     }
 
     setupInterceptors() {
-        // Interceptor de requisição para logging
         this.httpClient.interceptors.request.use(
             (config) => {
                 this.logger.info(`Making ${config.method?.toUpperCase()} request to ${config.baseURL}${config.url}`, {
@@ -132,7 +126,6 @@ class BaseIntegration {
             }
         );
 
-        // Interceptor de resposta para logging e tratamento de erros
         this.httpClient.interceptors.response.use(
             (response) => {
                 this.logger.info(`Response received from ${this.serviceName}`, {
@@ -166,7 +159,6 @@ class BaseIntegration {
         );
     }
 
-    // Método utilitário para fazer requisições com retry
     async makeRequest(config, retries = 3) {
         for (let i = 0; i < retries; i++) {
             try {
@@ -176,7 +168,6 @@ class BaseIntegration {
                     throw error;
                 }
 
-                // Aguarda antes de tentar novamente (backoff exponencial)
                 const delay = Math.pow(2, i) * 1000;
                 this.logger.warn(`Retrying request to ${this.serviceName} in ${delay}ms`, {
                     attempt: i + 1,
@@ -188,7 +179,6 @@ class BaseIntegration {
         }
     }
 
-    // Método para validar se o serviço está disponível
     async healthCheck() {
         try {
             const response = await this.httpClient.get('/health');

@@ -76,7 +76,6 @@ router.get(
     salesController.getSalesByCustomer
 );
 
-// Rota de health check das integrações
 router.get('/integrations/health', ensureAuthorization, verifyToken, salesController.getIntegrationsHealth);
 
 module.exports = router;

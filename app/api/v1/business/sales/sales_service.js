@@ -1,11 +1,13 @@
-const Sales = require('./sales_model');
+const SalesModel = require('./sales_model');
+const SalesPayment = require('../../../../providers/sales_payment');
 const BaseService = require('../../base/base_service');
 const { v4: uuidv4 } = require('uuid');
 
 class SalesService extends BaseService {
     constructor() {
         super();
-        this._salesModel = Sales;
+        this._salesModel = SalesModel;
+        this._salesPayment = new SalesPayment();
     }
 
     async list({ page = 1, limit = 20, status, payment_status, customer_id, source, integration_source, is_active }) {
@@ -48,10 +50,10 @@ class SalesService extends BaseService {
     async create(data) {
         // Gerar número do pedido único
         const orderNumber = this.generateOrderNumber();
-        
+
         // Calcular valores
         const calculatedData = this.calculateAmounts(data);
-        
+
         const saleData = {
             ...data,
             order_number: orderNumber,
@@ -91,10 +93,11 @@ class SalesService extends BaseService {
         if (!sale) return null;
 
         const updateData = { payment_status };
-        
+
         if (payment_data.payment_method) updateData.payment_method = payment_data.payment_method;
         if (payment_data.payment_gateway) updateData.payment_gateway = payment_data.payment_gateway;
-        if (payment_data.payment_transaction_id) updateData.payment_transaction_id = payment_data.payment_transaction_id;
+        if (payment_data.payment_transaction_id)
+            updateData.payment_transaction_id = payment_data.payment_transaction_id;
 
         await sale.update(updateData);
         return sale;
@@ -128,18 +131,18 @@ class SalesService extends BaseService {
 
     async getSalesSummary({ startDate, endDate, status, payment_status } = {}) {
         const where = { is_active: true };
-        
+
         if (startDate && endDate) {
             where.created_at = {
                 [require('sequelize').Op.between]: [startDate, endDate]
             };
         }
-        
+
         if (status) where.status = status;
         if (payment_status) where.payment_status = payment_status;
 
         const sales = await this._salesModel.findAll({ where });
-        
+
         const summary = {
             total_sales: sales.length,
             total_amount: 0,
@@ -148,9 +151,9 @@ class SalesService extends BaseService {
             total_cancelled: 0
         };
 
-        sales.forEach(sale => {
+        sales.forEach((sale) => {
             summary.total_amount += sale.total_amount;
-            
+
             if (sale.payment_status === 'PAID') {
                 summary.total_paid += sale.total_amount;
             } else if (sale.payment_status === 'PENDING') {
@@ -165,7 +168,9 @@ class SalesService extends BaseService {
 
     generateOrderNumber() {
         const timestamp = Date.now();
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const random = Math.floor(Math.random() * 1000)
+            .toString()
+            .padStart(3, '0');
         return `ORD-${timestamp}-${random}`;
     }
 
@@ -177,13 +182,13 @@ class SalesService extends BaseService {
         let shipping = data.shipping_amount || 0;
 
         // Calcular subtotal dos itens
-        items.forEach(item => {
+        items.forEach((item) => {
             const itemTotal = (item.price || 0) * (item.quantity || 1);
             subtotal += itemTotal;
         });
 
         // Calcular impostos (exemplo: 10% de ICMS)
-        tax = Math.round(subtotal * 0.10);
+        tax = Math.round(subtotal * 0.1);
 
         // Calcular total
         const total = subtotal + tax + shipping - discount;
@@ -198,4 +203,4 @@ class SalesService extends BaseService {
     }
 }
 
-module.exports = SalesService; 
+module.exports = SalesService;

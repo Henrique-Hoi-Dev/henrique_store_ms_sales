@@ -4,6 +4,7 @@ const ValidationsErrorHandler = require('./validations_error_handler');
 const validationsErrorHandler = new ValidationsErrorHandler();
 const keys = require('../../app/utils/error_mapping');
 const { validVerifyToken } = require('../../app/utils/jwt');
+const { globalTokenBlacklistChecker } = require('../../app/utils/token-blacklist-checker');
 const jwt = require('jsonwebtoken');
 
 const logger = require('../utils/logger');
@@ -89,6 +90,16 @@ async function verifyToken(req, res, next) {
         }
 
         try {
+            // Primeiro verificar se o token está na blacklist
+            const blacklistResult = await globalTokenBlacklistChecker.checkTokenBlacklist(token);
+            
+            if (blacklistResult.success && blacklistResult.isBlacklisted) {
+                const error = new Error('TOKEN_BLACKLISTED');
+                error.status = 401;
+                error.key = 'TOKEN_BLACKLISTED';
+                return next(error);
+            }
+
             const decodedToken = validVerifyToken(token);
             req.locals = { ...req.locals, user: decodedToken };
             next();
@@ -198,6 +209,17 @@ function errorHandler(err, req, res, next) {
                 status: 401,
                 key: 'TOKEN_NOT_ACTIVE',
                 errorCode: keys['TOKEN_NOT_ACTIVE'] || 401
+            }
+        });
+    }
+
+    if (err.key === 'TOKEN_BLACKLISTED') {
+        return res.status(401).json({
+            error: {
+                message: 'Token foi invalidado. Faça login novamente.',
+                status: 401,
+                key: 'TOKEN_BLACKLISTED',
+                errorCode: keys['TOKEN_BLACKLISTED'] || 401
             }
         });
     }

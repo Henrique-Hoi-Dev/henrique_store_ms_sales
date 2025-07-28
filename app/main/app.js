@@ -12,11 +12,21 @@ const i18n = require('i18n');
 const middle = require('./middleware');
 const addRouters = require('./routers');
 const logger = require('../utils/logger');
-const pinoHttp = require('pino-http')({ logger: logger });
+
+const pinoHttp = require('pino-http')({
+    logger: logger,
+    customLogLevel: function (req, res, err) {
+        if (req.headers['user-agent']?.includes('kube-probe')) {
+            return 'silent';
+        }
+        return 'info';
+    }
+});
 const csrf = require('csurf');
 const csrfProtection = csrf({
     cookie: true,
-    ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'DELETE', 'PATCH']
+    ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    ignorePaths: ['/health', '/v1/health']
 });
 
 const memoryStore = new session.MemoryStore();
@@ -43,7 +53,6 @@ const rawBodySaver = function (req, res, buffer, encoding) {
 
 app.use(compress());
 
-// CORS configuration for API
 const corsOptions = {
     origin: process.env.ALLOWED_ORIGINS
         ? process.env.ALLOWED_ORIGINS.split(',')
@@ -52,7 +61,7 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 86400 // 24 hours
+    maxAge: 86400
 };
 app.use(cors(corsOptions));
 app.use(
@@ -83,7 +92,6 @@ app.use(i18n.init);
 
 app.disable('x-powered-by');
 
-// Security middleware
 app.use(helmet.noSniff());
 app.use(helmet.frameguard({ action: 'deny' }));
 app.use(helmet.hidePoweredBy());
@@ -91,13 +99,11 @@ app.use(helmet.xssFilter());
 app.use(helmet.referrerPolicy({ policy: 'strict-origin-when-cross-origin' }));
 
 app.use((req, res, next) => {
-    // Security headers for API
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('X-Frame-Options', 'DENY');
     res.set('X-XSS-Protection', '1; mode=block');
     res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-    // Content Security Policy for API
     const cspPolicy = [
         "default-src 'self'",
         "script-src 'self'",

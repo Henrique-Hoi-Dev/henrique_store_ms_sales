@@ -1,9 +1,9 @@
 // Arquivo de índice para exportar todas as integrações
-const SalesPaymentIntegration = require('./sales_payment_integration');
+const SalesPayment = require('./sales_payment');
 
 // Exportar integrações individuais
 module.exports = {
-    SalesPaymentIntegration
+    SalesPayment
 };
 
 // Exportar todas as integrações como um objeto
